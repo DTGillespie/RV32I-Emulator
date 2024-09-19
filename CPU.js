@@ -6,6 +6,14 @@ class CPU {
     this.memory = new Uint8Array(memorySize);
   };
 
+  run() {
+    while(true) {
+      const instruction = this.fetch();
+      const decoded = this.decode(instruction);
+      this.execute(decoded);
+    };
+  };
+
   fetch() {
     const instruction = this.memory[this.pc] |
       (this.memory[this.pc + 1] << 8)        |
@@ -178,5 +186,36 @@ class CPU {
       imm,
       opcode: instruction & 0x7F
     };
+  };
+
+  execute(decoded) {
+    switch(decoded.type) {
+      case 'R': this.executeRType(decoded); break;
+      case 'I': this.executeIType(decoded); break;
+      case 'S': this.executeSType(decoded); break;
+      case 'B': this.executeBType(decoded); break;
+      case 'U': this.executeUType(decoded); break;
+      case 'J': this.executeJType(decoded); break;
+      default: throw new Error('Unsupported instruction type: ${decoded.type');
+    };
+  };
+
+  executeRType({rd, rs1, rs2, funct3, funct7}) {
+
+    const [val1, val2] = [
+      this.registers[rs1],
+      this.registers[rs2]
+    ];
+
+    let result;
+    if (funct3 === 0b000 && funct7 === 0b0000000) {
+      result = val1 + val2; // ADD
+    } else if (funct3 === 0b000 && funct7 === 0b0100000) {
+      result = val1 - val2; // SUB
+    } else {
+      throw new Error(`Unsupported R-Type funct3: ${funct3}, funct7: ${funct7}`);
+    };
+
+    this.registers[rd] = result;
   };
 };
