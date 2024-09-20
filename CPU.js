@@ -207,11 +207,19 @@ class CPU {
       this.registers[rs2]
     ];
 
+    // Need to implement XOR, SRL, SRA, OR, AND
+
     let result;
     if (funct3 === 0b000 && funct7 === 0b0000000) {
       result = val1 + val2; // ADD
     } else if (funct3 === 0b000 && funct7 === 0b0100000) {
       result = val1 - val2; // SUB
+    } else if (funct3 === 0b001 && funct7 === 0b0000000) {
+      result = val1 << (val2 & 0x1F); // SLL
+    } else if (funct3 === 0b010 && funct7 === 0b0000000) {
+      result = (val1 < val2) ? 1 : 0; // SLT
+    } else if (funct3 === 0b011 && funct7 === 0b0000000) {
+      result = ((val1 >>> 0) < (val2 >>> 0)) ? 1 : 0; // SLTU
     } else {
       throw new Error(`Unsupported R-Type funct3: ${funct3}, funct7: ${funct7}`);
     };
