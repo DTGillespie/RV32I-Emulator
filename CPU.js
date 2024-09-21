@@ -117,7 +117,7 @@ class CPU {
       (instruction >> 20) & 0x1F,
     ];
     
-    let = ((instruction >> 7) & 0x1F) | ((instruction >> 25) << 5); // 12-bit immediate
+    let imm = ((instruction >> 7) & 0x1F) | ((instruction >> 25) << 5); // 12-bit immediate
     if (imm & 0x800) imm |= 0xFFFFF000; // Sign extended
 
     return {
@@ -207,23 +207,47 @@ class CPU {
       this.registers[rs2]
     ];
 
-    // Need to implement XOR, SRL, SRA, OR, AND
+    // Need to implement SRL, SRA, AND
 
     let result;
-    if (funct3 === 0b000 && funct7 === 0b0000000) {
-      result = val1 + val2; // ADD
-    } else if (funct3 === 0b000 && funct7 === 0b0100000) {
-      result = val1 - val2; // SUB
-    } else if (funct3 === 0b001 && funct7 === 0b0000000) {
-      result = val1 << (val2 & 0x1F); // SLL
-    } else if (funct3 === 0b010 && funct7 === 0b0000000) {
-      result = (val1 < val2) ? 1 : 0; // SLT
-    } else if (funct3 === 0b011 && funct7 === 0b0000000) {
-      result = ((val1 >>> 0) < (val2 >>> 0)) ? 1 : 0; // SLTU
-    } else {
-      throw new Error(`Unsupported R-Type funct3: ${funct3}, funct7: ${funct7}`);
+    switch(funct3) {
+      
+      case 0b000: // ADD/SUB
+        result = (funct7 === 0b0000000) ? val1 + val2 : val1 - val2; 
+      break;
+
+      case 0b001: // SLL
+        result = val1 << (val2 & 0x1F);
+      break;
+
+      case 0b010: // SLT
+        result = (val1 < val2) ? 1 : 0;
+      break;
+
+      case 0b011: // SLTU
+        result = ((val1 >>> 0) < (val2 >>> 0)) ? 1 : 0;
+      break;
+
+      case 0b100: // XOR
+        result = val1 ^ val2;
+      break;
+
+      case 0b110: // OR
+        result = val1 | val2;
+      break;
+
+      case 0b111: // AND
+        result = val1 & val2;
+      break;
+
+      case 0b101: // SRL/SRA (Logical shift doesn't preserve sign while arithmetic shift does)
+        result = (funct7 === 0b0000000) ? val1 >>> (val2 & 0x1F) : val1 >> (val2 & 0x1F);
+      break;
+
+      default:
+        throw new Error(`Unsupported R-Type funct3: ${funct3}, funct7: ${funct7}`);
     };
 
-    this.registers[rd] = result;
+    if (rd !== 0) this.registers[rd] = result;
   };
 };
